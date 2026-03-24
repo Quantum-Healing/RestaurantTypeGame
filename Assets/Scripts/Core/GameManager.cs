@@ -51,10 +51,27 @@ namespace KitchenEmpire
 
         void Start()
         {
+            if (config == null)
+            {
+                Debug.LogError("GameManager: No GameConfig assigned!");
+                return;
+            }
+
             Money = config.startingMoney;
-            gridManager.InitializeGrid(config.initialGridWidth, config.initialGridHeight);
-            machineManager.PlaceStartingLayout();
-            powerManager.RecalculatePower();
+
+            if (gridManager != null)
+                gridManager.InitializeGrid(config.initialGridWidth, config.initialGridHeight);
+
+            if (machineManager != null && machineManager.allMachineDefinitions != null
+                && machineManager.allMachineDefinitions.Length > 0)
+                machineManager.PlaceStartingLayout();
+
+            if (powerManager != null)
+                powerManager.RecalculatePower();
+
+            if (isoCamera != null && gridManager != null)
+                isoCamera.CenterOnGrid(gridManager);
+
             GameEvents.FireMoneyChanged(Money);
         }
 
