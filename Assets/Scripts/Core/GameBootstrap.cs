@@ -37,7 +37,7 @@ namespace KitchenEmpire
             var camObj = new GameObject("IsometricCamera");
             var cam = camObj.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 5f;
+            cam.orthographicSize = 8f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.18f, 0.20f, 0.25f);
             cam.nearClipPlane = 0.1f;

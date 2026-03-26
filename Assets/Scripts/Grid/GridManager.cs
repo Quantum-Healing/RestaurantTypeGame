@@ -72,6 +72,13 @@ namespace KitchenEmpire
                             renderer.material = floorMaterialA;
                         else if (!isAlt && floorMaterialB != null)
                             renderer.material = floorMaterialB;
+                        else
+                        {
+                            // Tint the URP material for checkerboard when no assets assigned
+                            renderer.material.color = isAlt
+                                ? new Color(0.52f, 0.54f, 0.60f)
+                                : new Color(0.44f, 0.46f, 0.52f);
+                        }
                     }
 
                     _tiles[new Vector2Int(x, y)] = tile;
@@ -128,6 +135,11 @@ namespace KitchenEmpire
 
             mf.mesh = mesh;
 
+            // URP-compatible material (built-in Standard shader is invisible in URP)
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.color = new Color(0.55f, 0.57f, 0.62f);
+            mr.material = mat;
+
             // Add collider for raycasting
             MeshCollider mc = tile.AddComponent<MeshCollider>();
             mc.sharedMesh = mesh;
@@ -145,9 +157,17 @@ namespace KitchenEmpire
                 : new Vector3(0.05f, 0.6f, 0.5f);
             wall.name = "Wall";
 
+            var renderer = wall.GetComponent<Renderer>();
             if (wallMaterial != null)
             {
-                wall.GetComponent<Renderer>().material = wallMaterial;
+                renderer.material = wallMaterial;
+            }
+            else
+            {
+                // CreatePrimitive uses built-in Standard shader which is invisible in URP
+                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                mat.color = new Color(0.72f, 0.67f, 0.56f);
+                renderer.material = mat;
             }
 
             return wall;
