@@ -35,3 +35,4 @@ PlayerSettings:
   platformArchitecture: {}
   suppressCommonWarnings: 1
   allowedAutoRefreshMode: 0
+  activeInputHandler: 0
