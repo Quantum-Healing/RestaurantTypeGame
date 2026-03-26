@@ -74,10 +74,9 @@ namespace KitchenEmpire
                             renderer.material = floorMaterialB;
                         else
                         {
-                            // Tint the URP material for checkerboard when no assets assigned
-                            renderer.material.color = isAlt
+                            renderer.material = CreateMaterial(isAlt
                                 ? new Color(0.52f, 0.54f, 0.60f)
-                                : new Color(0.44f, 0.46f, 0.52f);
+                                : new Color(0.44f, 0.46f, 0.52f));
                         }
                     }
 
@@ -135,10 +134,7 @@ namespace KitchenEmpire
 
             mf.mesh = mesh;
 
-            // URP-compatible material (built-in Standard shader is invisible in URP)
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.color = new Color(0.55f, 0.57f, 0.62f);
-            mr.material = mat;
+            mr.material = CreateMaterial(new Color(0.55f, 0.57f, 0.62f));
 
             // Add collider for raycasting
             MeshCollider mc = tile.AddComponent<MeshCollider>();
@@ -159,18 +155,21 @@ namespace KitchenEmpire
 
             var renderer = wall.GetComponent<Renderer>();
             if (wallMaterial != null)
-            {
                 renderer.material = wallMaterial;
-            }
             else
-            {
-                // CreatePrimitive uses built-in Standard shader which is invisible in URP
-                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                mat.color = new Color(0.72f, 0.67f, 0.56f);
-                renderer.material = mat;
-            }
+                renderer.material.color = new Color(0.72f, 0.67f, 0.56f);
 
             return wall;
+        }
+
+        private static Material CreateMaterial(Color color)
+        {
+            // Try URP first, fall back to Standard (built-in pipeline)
+            var shader = Shader.Find("Universal Render Pipeline/Lit")
+                      ?? Shader.Find("Standard");
+            var mat = new Material(shader);
+            mat.color = color;
+            return mat;
         }
 
         private void ClearGrid()

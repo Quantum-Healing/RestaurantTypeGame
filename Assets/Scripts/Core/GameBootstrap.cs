@@ -43,6 +43,7 @@ namespace KitchenEmpire
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 100f;
 
+            camObj.tag = "MainCamera";
             var isoCamera = camObj.AddComponent<IsometricCamera>();
             camObj.transform.rotation = Quaternion.Euler(45f, 45f, 0f);
             camObj.transform.position = new Vector3(0, 10, -10);
