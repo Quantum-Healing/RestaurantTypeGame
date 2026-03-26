@@ -11,6 +11,13 @@ public class SetupWizard : EditorWindow
     [MenuItem("KitchenEmpire/Setup All Data")]
     public static void SetupAll()
     {
+        // Ensure all folders exist first
+        EnsureFolder("Assets/ScriptableObjects");
+        EnsureFolder("Assets/ScriptableObjects/Machines");
+        EnsureFolder("Assets/ScriptableObjects/Recipes");
+        EnsureFolder("Assets/ScriptableObjects/Upgrades");
+        EnsureFolder("Assets/Scenes");
+
         CreateGameConfig();
         CreateMachineDefinitions();
         CreateRecipes();
