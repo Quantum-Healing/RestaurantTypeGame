@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using KitchenEmpire;
 
 /// <summary>
@@ -8,6 +10,39 @@ using KitchenEmpire;
 /// </summary>
 public class SetupWizard : EditorWindow
 {
+    [MenuItem("KitchenEmpire/Setup URP Pipeline")]
+    public static void SetupURP()
+    {
+        EnsureFolder("Assets/Settings");
+
+        // Create the forward renderer data asset
+        var rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+        string rendererPath = "Assets/Settings/URP_Renderer.asset";
+        if (AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath) == null)
+            AssetDatabase.CreateAsset(rendererData, rendererPath);
+        else
+            rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
+
+        // Create the URP pipeline asset pointing at the renderer
+        string pipelinePath = "Assets/Settings/URP_Pipeline.asset";
+        var pipelineAsset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(pipelinePath);
+        if (pipelineAsset == null)
+        {
+            pipelineAsset = UniversalRenderPipelineAsset.Create(rendererData);
+            AssetDatabase.CreateAsset(pipelineAsset, pipelinePath);
+        }
+
+        // Activate URP in Graphics and all Quality levels
+        GraphicsSettings.renderPipelineAsset = pipelineAsset;
+        for (int i = 0; i < QualitySettings.count; i++)
+            QualitySettings.SetQualityLevel(i, false);
+        QualitySettings.renderPipeline = pipelineAsset;
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("Kitchen Empire: URP pipeline configured! Press Play now.");
+    }
+
     [MenuItem("KitchenEmpire/Setup All Data")]
     public static void SetupAll()
     {
