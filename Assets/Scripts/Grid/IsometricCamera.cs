@@ -17,7 +17,7 @@ namespace KitchenEmpire
 
         [Header("Isometric Angle")]
         public float cameraAngleX = 35f;
-        public float cameraAngleY = -45f;
+        public float cameraAngleY = 0f;
         public float cameraDistance = 10f;
 
         private Vector3 _targetPosition;

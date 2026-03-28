@@ -44,8 +44,9 @@ namespace KitchenEmpire
             cam.farClipPlane = 100f;
 
             var isoCamera = camObj.AddComponent<IsometricCamera>();
-            // PlateUp!-style: camera looks from southeast toward northwest so kitchen faces player
-            camObj.transform.rotation = Quaternion.Euler(35f, -45f, 0f);
+            // PlateUp!-style: pitch down only, no yaw — the isometric grid coordinates
+            // already create the diamond projection, so yaw=0 keeps the kitchen facing the player
+            camObj.transform.rotation = Quaternion.Euler(35f, 0f, 0f);
             camObj.AddComponent<AudioListener>();
 
             // Destroy default camera BEFORE tagging ours as MainCamera.
@@ -159,7 +160,7 @@ namespace KitchenEmpire
             // ===== TOP BAR (HUD) =====
             var topBar = CreatePanel(canvasObj.transform, "TopBar",
                 new Vector2(0, 1), new Vector2(1, 1),
-                new Vector2(0, -10), new Vector2(0, -50),
+                new Vector2(0, -50), new Vector2(0, 0),
                 new Color(0.12f, 0.14f, 0.18f, 0.9f));
 
             uiMgr.dayText = CreateText(topBar.transform, "DayText", "Day 1",

@@ -81,8 +81,8 @@ namespace KitchenEmpire
 
         private void BuildWalls()
         {
-            // Camera looks from the southeast (Euler 35, -45, 0), so back walls
-            // are at the far edges: y = GridHeight-1 and x = GridWidth-1.
+            // Camera looks along +Z (Euler 35, 0, 0). Back walls are at the
+            // far-Z edges: y = GridHeight-1 and x = GridWidth-1.
 
             // Back wall along y = GridHeight-1 (runs in +X world direction)
             for (int x = 0; x < GridWidth; x++)
