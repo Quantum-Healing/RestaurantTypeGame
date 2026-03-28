@@ -44,14 +44,16 @@ namespace KitchenEmpire
             cam.farClipPlane = 100f;
 
             var isoCamera = camObj.AddComponent<IsometricCamera>();
-            camObj.transform.rotation = Quaternion.Euler(45f, 45f, 0f);
-            camObj.transform.position = new Vector3(0, 10, -10);
+            // PlateUp!-style: camera looks from southeast toward northwest so kitchen faces player
+            camObj.transform.rotation = Quaternion.Euler(35f, -45f, 0f);
             camObj.AddComponent<AudioListener>();
 
-            // Destroy default camera if exists
+            // Destroy default camera BEFORE tagging ours as MainCamera.
+            // If we tag first, Camera.main returns our own camera and the
+            // scene camera survives, causing two cameras to render at once.
             var defaultCam = Camera.main;
-            if (defaultCam != null && defaultCam.gameObject != camObj)
-                Destroy(defaultCam.gameObject);
+            if (defaultCam != null) Destroy(defaultCam.gameObject);
+            camObj.tag = "MainCamera";
 
             // ===== LIGHTING =====
             var lightObj = new GameObject("DirectionalLight");
@@ -60,6 +62,10 @@ namespace KitchenEmpire
             light.color = new Color(1f, 0.96f, 0.88f);
             light.intensity = 1.2f;
             lightObj.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            // Ambient light so Standard-shader objects are visible without baked lighting
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.4f, 0.4f, 0.45f);
 
             // ===== GRID =====
             var gridObj = new GameObject("GridManager");

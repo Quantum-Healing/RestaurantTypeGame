@@ -81,18 +81,21 @@ namespace KitchenEmpire
 
         private void BuildWalls()
         {
-            // Back-left wall (along y=0)
+            // Camera looks from the southeast (Euler 35, -45, 0), so back walls
+            // are at the far edges: y = GridHeight-1 and x = GridWidth-1.
+
+            // Back wall along y = GridHeight-1 (runs in +X world direction)
             for (int x = 0; x < GridWidth; x++)
             {
-                Vector3 pos = GridToWorld(x, 0) + new Vector3(0, 0.3f, 0.25f);
+                Vector3 pos = GridToWorld(x, GridHeight - 1) + new Vector3(0, 0.3f, 0.25f);
                 GameObject wall = CreateWallSegment(pos, true);
                 _walls.Add(wall);
             }
 
-            // Back-right wall (along x=0)
+            // Back wall along x = GridWidth-1 (runs in -X world direction as y increases)
             for (int y = 0; y < GridHeight; y++)
             {
-                Vector3 pos = GridToWorld(0, y) + new Vector3(-0.25f, 0.3f, 0);
+                Vector3 pos = GridToWorld(GridWidth - 1, y) + new Vector3(0.25f, 0.3f, 0);
                 GameObject wall = CreateWallSegment(pos, false);
                 _walls.Add(wall);
             }
