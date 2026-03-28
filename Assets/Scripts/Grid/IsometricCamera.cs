@@ -23,6 +23,7 @@ namespace KitchenEmpire
         private Vector3 _targetPosition;
         private float _targetZoom;
         private Camera _cam;
+        private GridManager _gridManager;
 
         void Awake()
         {
@@ -88,7 +89,31 @@ namespace KitchenEmpire
                 Vector3 right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
                 Vector3 move = (right * input.x + forward * input.z) * panSpeed * Time.unscaledDeltaTime;
                 _targetPosition += move;
+                ClampTargetPosition();
             }
+        }
+
+        /// <summary>
+        /// Prevent the camera from panning outside the grid bounds.
+        /// </summary>
+        private void ClampTargetPosition()
+        {
+            if (_gridManager == null)
+                _gridManager = UnityEngine.Object.FindFirstObjectByType<GridManager>();
+            if (_gridManager == null) return;
+
+            // Get the world-space corners of the grid
+            Vector3 min = _gridManager.GridToWorld(0, 0);
+            Vector3 max = _gridManager.GridToWorld(_gridManager.GridWidth - 1, _gridManager.GridHeight - 1);
+
+            // Expand slightly so the edges are reachable
+            float padding = 1f;
+            _targetPosition.x = Mathf.Clamp(_targetPosition.x,
+                Mathf.Min(min.x, max.x) - padding,
+                Mathf.Max(min.x, max.x) + padding);
+            _targetPosition.z = Mathf.Clamp(_targetPosition.z,
+                Mathf.Min(min.z, max.z) - padding,
+                Mathf.Max(min.z, max.z) + padding);
         }
 
         private void HandleZoom()
