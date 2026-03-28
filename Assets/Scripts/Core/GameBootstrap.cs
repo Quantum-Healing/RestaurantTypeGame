@@ -62,6 +62,10 @@ namespace KitchenEmpire
             light.intensity = 1.2f;
             lightObj.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
+            // Ambient light so Standard-shader objects are visible without baked lighting
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.4f, 0.4f, 0.45f);
+
             // ===== GRID =====
             var gridObj = new GameObject("GridManager");
             var gridManager = gridObj.AddComponent<GridManager>();

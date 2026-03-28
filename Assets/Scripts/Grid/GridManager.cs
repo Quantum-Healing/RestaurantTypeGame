@@ -164,8 +164,10 @@ namespace KitchenEmpire
 
         private static Material CreateMaterial(Color color)
         {
-            // Try URP first, fall back to Standard (built-in pipeline)
+            // Try URP first, then Unlit/Color (always visible, no lighting required),
+            // then Standard as last resort
             var shader = Shader.Find("Universal Render Pipeline/Lit")
+                      ?? Shader.Find("Unlit/Color")
                       ?? Shader.Find("Standard");
             var mat = new Material(shader);
             mat.color = color;
