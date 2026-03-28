@@ -43,16 +43,17 @@ namespace KitchenEmpire
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 100f;
 
-            camObj.tag = "MainCamera";
             var isoCamera = camObj.AddComponent<IsometricCamera>();
             camObj.transform.rotation = Quaternion.Euler(45f, 45f, 0f);
             camObj.transform.position = new Vector3(0, 10, -10);
             camObj.AddComponent<AudioListener>();
 
-            // Destroy default camera if exists
+            // Destroy default camera BEFORE tagging ours as MainCamera,
+            // otherwise Camera.main returns our own camera and the scene
+            // camera survives, causing two cameras to render simultaneously.
             var defaultCam = Camera.main;
-            if (defaultCam != null && defaultCam.gameObject != camObj)
-                Destroy(defaultCam.gameObject);
+            if (defaultCam != null) Destroy(defaultCam.gameObject);
+            camObj.tag = "MainCamera";
 
             // ===== LIGHTING =====
             var lightObj = new GameObject("DirectionalLight");

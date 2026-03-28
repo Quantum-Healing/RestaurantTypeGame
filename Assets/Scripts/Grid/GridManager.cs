@@ -164,14 +164,20 @@ namespace KitchenEmpire
 
         private static Material CreateMaterial(Color color)
         {
-            // Try URP first, then Unlit/Color (always visible, no lighting required),
-            // then Standard as last resort
-            var shader = Shader.Find("Universal Render Pipeline/Lit")
-                      ?? Shader.Find("Unlit/Color")
-                      ?? Shader.Find("Standard");
-            var mat = new Material(shader);
-            mat.color = color;
-            return mat;
+            var urpShader = Shader.Find("Universal Render Pipeline/Lit");
+            if (urpShader != null)
+            {
+                var mat = new Material(urpShader);
+                // URP Lit uses _BaseColor, not _Color
+                mat.SetColor("_BaseColor", color);
+                return mat;
+            }
+
+            // Built-in pipeline fallback: Unlit/Color always shows exact color
+            var fallback = Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            var fallbackMat = new Material(fallback);
+            fallbackMat.color = color;
+            return fallbackMat;
         }
 
         private void ClearGrid()
