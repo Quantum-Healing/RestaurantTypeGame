@@ -72,7 +72,7 @@ namespace KitchenEmpire
                 ? input.normalized * moveSpeed
                 : Vector3.zero;
 
-            _rb.linearVelocity = new Vector3(move.x, _rb.linearVelocity.y, move.z);
+            _rb.velocity = new Vector3(move.x, _rb.velocity.y, move.z);
 
             // Rotate model to face movement direction
             if (move.sqrMagnitude > 0.01f)
