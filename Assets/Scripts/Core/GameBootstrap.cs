@@ -108,6 +108,15 @@ namespace KitchenEmpire
             var vfxObj = new GameObject("VFXManager");
             vfxObj.AddComponent<VFXManager>();
 
+            // ===== PLAYER =====
+            var playerObj = new GameObject("Player");
+            playerObj.transform.position = new Vector3(1f, 0f, 1f);
+            playerObj.AddComponent<CapsuleCollider>();
+            var player = playerObj.AddComponent<PlayerController>();
+
+            // Camera follows the player
+            isoCamera.followTarget = playerObj.transform;
+
             // ===== UI =====
             var uiManager = BuildUI();
 

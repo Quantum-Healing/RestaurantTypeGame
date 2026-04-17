@@ -3,22 +3,23 @@ using UnityEngine;
 namespace KitchenEmpire
 {
     /// <summary>
-    /// Angled overhead camera (Stardew Valley style).
-    /// Pitches down ~55 degrees looking along +Z. No yaw — grid stays straight.
-    /// Pan with WASD, zoom with scroll wheel.
+    /// Angled overhead camera. Follows the player when one is assigned,
+    /// otherwise free-pans with WASD. Scroll wheel zooms.
     /// </summary>
     public class IsometricCamera : MonoBehaviour
     {
         [Header("Settings")]
-        public float panSpeed = 8f;
         public float zoomSpeed = 10f;
         public float minZoom = 3f;
         public float maxZoom = 18f;
-        public float smoothSpeed = 10f;
+        public float smoothSpeed = 8f;
 
         [Header("Angle")]
         public float pitchAngle = 55f;
         public float viewDistance = 14f;
+
+        [Header("Follow")]
+        public Transform followTarget;      // set to player transform
 
         private Vector3 _lookTarget;
         private float _targetZoom;
@@ -31,10 +32,7 @@ namespace KitchenEmpire
             _targetZoom = _cam != null ? _cam.orthographicSize : 6f;
         }
 
-        void Start()
-        {
-            ApplyTransform(true);
-        }
+        void Start() => ApplyTransform(true);
 
         public void CenterOnGrid(GridManager grid)
         {
@@ -44,23 +42,14 @@ namespace KitchenEmpire
             ApplyTransform(true);
         }
 
-        void Update()
+        void LateUpdate()
         {
-            HandlePanning();
+            // Follow player if assigned; otherwise keep last look target
+            if (followTarget != null)
+                _lookTarget = new Vector3(followTarget.position.x, 0f, followTarget.position.z);
+
             HandleZoom();
             ApplyTransform(false);
-        }
-
-        private void HandlePanning()
-        {
-            Vector3 move = Vector3.zero;
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    move.z += 1f;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  move.z -= 1f;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  move.x -= 1f;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) move.x += 1f;
-
-            if (move.sqrMagnitude > 0.01f)
-                _lookTarget += move.normalized * panSpeed * Time.unscaledDeltaTime;
         }
 
         private void HandleZoom()
@@ -84,7 +73,8 @@ namespace KitchenEmpire
             transform.position = instant ? desiredPos : Vector3.Lerp(transform.position, desiredPos, t);
             transform.rotation = instant ? desiredRot : Quaternion.Slerp(transform.rotation, desiredRot, t);
             if (_cam != null)
-                _cam.orthographicSize = instant ? _targetZoom : Mathf.Lerp(_cam.orthographicSize, _targetZoom, t);
+                _cam.orthographicSize = instant ? _targetZoom
+                    : Mathf.Lerp(_cam.orthographicSize, _targetZoom, t);
         }
 
         public bool ScreenToGroundPoint(Vector3 screenPos, out Vector3 worldPos)
