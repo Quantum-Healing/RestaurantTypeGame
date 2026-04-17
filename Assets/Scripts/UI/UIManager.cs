@@ -57,6 +57,9 @@ namespace KitchenEmpire
         public GameObject toastPrefab;
         public Transform toastContainer;
 
+        [Header("Interact Hint")]
+        public TextMeshProUGUI interactHint;
+
         [Header("Held Item Display")]
         public GameObject heldItemDisplay;
         public Image heldItemIcon;

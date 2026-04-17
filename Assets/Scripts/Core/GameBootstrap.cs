@@ -110,9 +110,10 @@ namespace KitchenEmpire
 
             // ===== PLAYER =====
             var playerObj = new GameObject("Player");
-            playerObj.transform.position = new Vector3(1f, 0f, 1f);
+            playerObj.transform.position = new Vector3(3f, 0f, 3f);
             playerObj.AddComponent<CapsuleCollider>();
             var player = playerObj.AddComponent<PlayerController>();
+            player.gridManager = gridManager;
 
             // Camera follows the player
             isoCamera.followTarget = playerObj.transform;
@@ -128,6 +129,9 @@ namespace KitchenEmpire
             inputHandler.machineManager = machineManager;
             inputHandler.powerManager = powerManager;
             inputHandler.uiManager = uiManager;
+
+            player.inputHandler = inputHandler;
+            player.uiManager = uiManager;
 
             // ===== GAME MANAGER =====
             var gmObj = new GameObject("GameManager");
@@ -346,6 +350,15 @@ namespace KitchenEmpire
                 new Color(0.984f, 0.749f, 0.149f));
 
             uiMgr.heldItemDisplay.SetActive(false);
+
+            // ===== PRESS E HINT =====
+            uiMgr.interactHint = CreateText(canvasObj.transform, "InteractHint", "[E] Interact",
+                new Vector2(-80, 115), new Vector2(80, 145), 16, TextAlignmentOptions.Center,
+                new Color(1f, 1f, 0.5f));
+            var hintRT = uiMgr.interactHint.GetComponent<RectTransform>();
+            hintRT.anchorMin = new Vector2(0.5f, 0f);
+            hintRT.anchorMax = new Vector2(0.5f, 0f);
+            uiMgr.interactHint.gameObject.SetActive(false);
 
             // ===== TOOLTIP =====
             uiMgr.tooltipPanel = CreatePanel(canvasObj.transform, "Tooltip",

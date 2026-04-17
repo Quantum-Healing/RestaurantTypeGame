@@ -218,6 +218,9 @@ namespace KitchenEmpire
             }
         }
 
+        /// <summary>Called by PlayerController when E is pressed near a machine.</summary>
+        public void InteractAt(Vector2Int pos) => HandleInteract(pos);
+
         private void HandleInteract(Vector2Int pos)
         {
             var gm = GameManager.Instance;
