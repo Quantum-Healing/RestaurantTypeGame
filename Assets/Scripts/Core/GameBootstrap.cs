@@ -37,20 +37,22 @@ namespace KitchenEmpire
             var camObj = new GameObject("IsometricCamera");
             var cam = camObj.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 8f;
+            cam.orthographicSize = 6f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.18f, 0.20f, 0.25f);
             cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 100f;
+            cam.farClipPlane = 200f;
 
             var isoCamera = camObj.AddComponent<IsometricCamera>();
-            camObj.transform.rotation = Quaternion.Euler(45f, 45f, 0f);
-            camObj.transform.position = new Vector3(0, 10, -10);
+            // Top-down orthographic: straight down, IsometricCamera manages final position
+            camObj.transform.SetPositionAndRotation(
+                new Vector3(0f, 30f, 0f),
+                Quaternion.Euler(90f, 0f, 0f));
             camObj.AddComponent<AudioListener>();
 
-            // Destroy default camera BEFORE tagging ours as MainCamera,
-            // otherwise Camera.main returns our own camera and the scene
-            // camera survives, causing two cameras to render simultaneously.
+            // Destroy default camera BEFORE tagging ours as MainCamera.
+            // If we tag first, Camera.main returns our own camera and the
+            // scene camera survives, causing two cameras to render at once.
             var defaultCam = Camera.main;
             if (defaultCam != null) Destroy(defaultCam.gameObject);
             camObj.tag = "MainCamera";
@@ -159,26 +161,26 @@ namespace KitchenEmpire
             // ===== TOP BAR (HUD) =====
             var topBar = CreatePanel(canvasObj.transform, "TopBar",
                 new Vector2(0, 1), new Vector2(1, 1),
-                new Vector2(0, -10), new Vector2(0, -50),
+                new Vector2(0, -50), new Vector2(0, 0),
                 new Color(0.12f, 0.14f, 0.18f, 0.9f));
 
             uiMgr.dayText = CreateText(topBar.transform, "DayText", "Day 1",
-                new Vector2(20, -5), new Vector2(120, 35), 20, TextAlignmentOptions.Left);
+                new Vector2(20, 5), new Vector2(140, 45), 20, TextAlignmentOptions.Left);
 
             uiMgr.moneyText = CreateText(topBar.transform, "MoneyText", "$150",
-                new Vector2(140, -5), new Vector2(260, 35), 22, TextAlignmentOptions.Left,
+                new Vector2(150, 5), new Vector2(290, 45), 22, TextAlignmentOptions.Left,
                 new Color(0.29f, 0.85f, 0.5f));
 
             uiMgr.reputationText = CreateText(topBar.transform, "RepText", "★ 0",
-                new Vector2(280, -5), new Vector2(380, 35), 18, TextAlignmentOptions.Left,
+                new Vector2(300, 5), new Vector2(410, 45), 18, TextAlignmentOptions.Left,
                 new Color(0.984f, 0.749f, 0.149f));
 
             uiMgr.powerText = CreateText(topBar.transform, "PowerText", "⚡ 0/10W",
-                new Vector2(400, -5), new Vector2(530, 35), 18, TextAlignmentOptions.Left,
+                new Vector2(420, 5), new Vector2(560, 45), 18, TextAlignmentOptions.Left,
                 new Color(0.376f, 0.647f, 0.980f));
 
             uiMgr.dayTimerText = CreateText(topBar.transform, "TimerText", "2:00",
-                new Vector2(-140, -5), new Vector2(-20, 35), 24, TextAlignmentOptions.Right,
+                new Vector2(-140, 5), new Vector2(-20, 45), 24, TextAlignmentOptions.Right,
                 Color.white);
             var timerRT = uiMgr.dayTimerText.GetComponent<RectTransform>();
             timerRT.anchorMin = new Vector2(1, 1);

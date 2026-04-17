@@ -3,117 +3,65 @@ using UnityEngine;
 namespace KitchenEmpire
 {
     /// <summary>
-    /// Isometric camera controller. Fixed angle, with pan and zoom.
-    /// PlateUp!-style top-down isometric view.
+    /// Top-down orthographic camera. Pans on XZ, scroll wheel zooms.
     /// </summary>
     public class IsometricCamera : MonoBehaviour
     {
         [Header("Settings")]
         public float panSpeed = 10f;
-        public float zoomSpeed = 3f;
-        public float minZoom = 3f;
-        public float maxZoom = 15f;
+        public float zoomSpeed = 2f;
+        public float minZoom = 2f;
+        public float maxZoom = 20f;
         public float smoothSpeed = 8f;
+        public float cameraHeight = 30f;
 
-        [Header("Isometric Angle")]
-        public float cameraAngleX = 45f;
-        public float cameraAngleY = 45f;
-        public float cameraDistance = 10f;
-
-        private Vector3 _targetPosition;
+        private Vector2 _targetXZ;   // camera look-at point in XZ
         private float _targetZoom;
         private Camera _cam;
-        private GridManager _gridManager;
 
         void Awake()
         {
             _cam = GetComponent<Camera>();
             if (_cam == null) _cam = Camera.main;
-            _targetZoom = cameraDistance;
+            _targetZoom = _cam != null ? _cam.orthographicSize : 6f;
+            _targetXZ = new Vector2(transform.position.x, transform.position.z);
         }
 
         void Start()
         {
-            // Set isometric rotation
-            transform.rotation = Quaternion.Euler(cameraAngleX, cameraAngleY, 0);
+            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            ApplyPosition(true);
         }
 
-        /// <summary>
-        /// Center camera on the middle of the grid.
-        /// </summary>
         public void CenterOnGrid(GridManager grid)
         {
-            Vector3 center = grid.GridToWorld(grid.GridWidth / 2, grid.GridHeight / 2);
-            _targetPosition = center;
-            UpdateCameraPosition(true);
+            float cx = grid.GridWidth  * 0.5f;
+            float cz = grid.GridHeight * 0.5f;
+            _targetXZ = new Vector2(cx, cz);
+            // Fit the grid in view: use the larger dimension as the zoom base
+            _targetZoom = Mathf.Max(grid.GridWidth, grid.GridHeight) * 0.6f;
+            _targetZoom = Mathf.Clamp(_targetZoom, minZoom, maxZoom);
+            ApplyPosition(true);
         }
 
         void Update()
         {
             HandlePanning();
             HandleZoom();
-            UpdateCameraPosition(false);
+            ApplyPosition(false);
         }
 
         private void HandlePanning()
         {
-            Vector3 input = Vector3.zero;
+            Vector2 input = Vector2.zero;
 
-            // WASD / Arrow keys
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) input.z += 1;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) input.z -= 1;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) input.x -= 1;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    input.y += 1;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  input.y -= 1;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  input.x -= 1;
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) input.x += 1;
 
-            // Middle mouse drag
-            if (Input.GetMouseButton(2))
-            {
-                float dx = -Input.GetAxis("Mouse X");
-                float dy = -Input.GetAxis("Mouse Y");
-                input.x += dx * 3f;
-                input.z += dy * 3f;
-            }
-
-            // Edge scrolling
-            Vector3 mousePos = Input.mousePosition;
-            float edgeThreshold = 20f;
-            if (mousePos.x < edgeThreshold) input.x -= 1;
-            if (mousePos.x > Screen.width - edgeThreshold) input.x += 1;
-            if (mousePos.y < edgeThreshold) input.z -= 1;
-            if (mousePos.y > Screen.height - edgeThreshold) input.z += 1;
-
-            if (input.sqrMagnitude > 0)
-            {
-                // Adjust for camera rotation so panning feels correct
-                Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-                Vector3 right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
-                Vector3 move = (right * input.x + forward * input.z) * panSpeed * Time.unscaledDeltaTime;
-                _targetPosition += move;
-                ClampTargetPosition();
-            }
-        }
-
-        /// <summary>
-        /// Prevent the camera from panning outside the grid bounds.
-        /// </summary>
-        private void ClampTargetPosition()
-        {
-            if (_gridManager == null)
-                _gridManager = UnityEngine.Object.FindFirstObjectByType<GridManager>();
-            if (_gridManager == null) return;
-
-            // Get the world-space corners of the grid
-            Vector3 min = _gridManager.GridToWorld(0, 0);
-            Vector3 max = _gridManager.GridToWorld(_gridManager.GridWidth - 1, _gridManager.GridHeight - 1);
-
-            // Expand slightly so the edges are reachable
-            float padding = 1f;
-            _targetPosition.x = Mathf.Clamp(_targetPosition.x,
-                Mathf.Min(min.x, max.x) - padding,
-                Mathf.Max(min.x, max.x) + padding);
-            _targetPosition.z = Mathf.Clamp(_targetPosition.z,
-                Mathf.Min(min.z, max.z) - padding,
-                Mathf.Max(min.z, max.z) + padding);
+            if (input.sqrMagnitude > 0.01f)
+                _targetXZ += input.normalized * panSpeed * Time.unscaledDeltaTime;
         }
 
         private void HandleZoom()
@@ -126,29 +74,37 @@ namespace KitchenEmpire
             }
         }
 
-        private void UpdateCameraPosition(bool instant)
+        private void ApplyPosition(bool instant)
         {
-            cameraDistance = instant ? _targetZoom
-                : Mathf.Lerp(cameraDistance, _targetZoom, Time.unscaledDeltaTime * smoothSpeed);
+            Vector3 target = new Vector3(_targetXZ.x, cameraHeight, _targetXZ.y);
 
-            Vector3 offset = -transform.forward * cameraDistance;
-            Vector3 desiredPos = _targetPosition + offset;
-
-            transform.position = instant ? desiredPos
-                : Vector3.Lerp(transform.position, desiredPos, Time.unscaledDeltaTime * smoothSpeed);
+            if (instant)
+            {
+                transform.position = target;
+                if (_cam != null) _cam.orthographicSize = _targetZoom;
+            }
+            else
+            {
+                transform.position = Vector3.Lerp(transform.position, target,
+                    Time.unscaledDeltaTime * smoothSpeed);
+                if (_cam != null)
+                    _cam.orthographicSize = Mathf.Lerp(_cam.orthographicSize, _targetZoom,
+                        Time.unscaledDeltaTime * smoothSpeed);
+            }
         }
 
         /// <summary>
-        /// Get world position on the ground plane from mouse position.
+        /// Project screen point onto the ground plane (Y=0).
         /// </summary>
         public bool ScreenToGroundPoint(Vector3 screenPos, out Vector3 worldPos)
         {
-            Ray ray = _cam.ScreenPointToRay(screenPos);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+            if (_cam == null) { worldPos = Vector3.zero; return false; }
 
-            if (groundPlane.Raycast(ray, out float distance))
+            Ray ray = _cam.ScreenPointToRay(screenPos);
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            if (ground.Raycast(ray, out float dist))
             {
-                worldPos = ray.GetPoint(distance);
+                worldPos = ray.GetPoint(dist);
                 return true;
             }
             worldPos = Vector3.zero;
