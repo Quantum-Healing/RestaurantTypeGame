@@ -3,8 +3,7 @@ using UnityEngine;
 namespace KitchenEmpire
 {
     /// <summary>
-    /// 2.5D camera controller. Orthographic, fixed at Z=50 facing -Z.
-    /// Pans on X/Y axes only. Scroll wheel zooms orthographic size.
+    /// Top-down orthographic camera. Pans on XZ, scroll wheel zooms.
     /// </summary>
     public class IsometricCamera : MonoBehaviour
     {
@@ -12,34 +11,36 @@ namespace KitchenEmpire
         public float panSpeed = 10f;
         public float zoomSpeed = 2f;
         public float minZoom = 2f;
-        public float maxZoom = 15f;
+        public float maxZoom = 20f;
         public float smoothSpeed = 8f;
+        public float cameraHeight = 30f;
 
-        private Vector2 _targetPosition;
+        private Vector2 _targetXZ;   // camera look-at point in XZ
         private float _targetZoom;
         private Camera _cam;
-
-        private const float CameraZ = 50f;
 
         void Awake()
         {
             _cam = GetComponent<Camera>();
             if (_cam == null) _cam = Camera.main;
-            _targetZoom = _cam != null ? _cam.orthographicSize : 5f;
-            _targetPosition = new Vector2(transform.position.x, transform.position.y);
+            _targetZoom = _cam != null ? _cam.orthographicSize : 6f;
+            _targetXZ = new Vector2(transform.position.x, transform.position.z);
         }
 
         void Start()
         {
-            transform.SetPositionAndRotation(
-                new Vector3(_targetPosition.x, _targetPosition.y, CameraZ),
-                Quaternion.Euler(0f, 180f, 0f));
+            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            ApplyPosition(true);
         }
 
         public void CenterOnGrid(GridManager grid)
         {
-            Vector3 center = grid.GridToWorld(grid.GridWidth / 2, grid.GridHeight / 2);
-            _targetPosition = new Vector2(center.x, center.y);
+            float cx = grid.GridWidth  * 0.5f;
+            float cz = grid.GridHeight * 0.5f;
+            _targetXZ = new Vector2(cx, cz);
+            // Fit the grid in view: use the larger dimension as the zoom base
+            _targetZoom = Mathf.Max(grid.GridWidth, grid.GridHeight) * 0.6f;
+            _targetZoom = Mathf.Clamp(_targetZoom, minZoom, maxZoom);
             ApplyPosition(true);
         }
 
@@ -60,7 +61,7 @@ namespace KitchenEmpire
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) input.x += 1;
 
             if (input.sqrMagnitude > 0.01f)
-                _targetPosition += input.normalized * panSpeed * Time.unscaledDeltaTime;
+                _targetXZ += input.normalized * panSpeed * Time.unscaledDeltaTime;
         }
 
         private void HandleZoom()
@@ -75,37 +76,35 @@ namespace KitchenEmpire
 
         private void ApplyPosition(bool instant)
         {
-            Vector3 desiredPos = new Vector3(_targetPosition.x, _targetPosition.y, CameraZ);
-            float desiredZoom = _targetZoom;
+            Vector3 target = new Vector3(_targetXZ.x, cameraHeight, _targetXZ.y);
 
             if (instant)
             {
-                transform.position = desiredPos;
-                if (_cam != null) _cam.orthographicSize = desiredZoom;
+                transform.position = target;
+                if (_cam != null) _cam.orthographicSize = _targetZoom;
             }
             else
             {
-                transform.position = Vector3.Lerp(transform.position, desiredPos,
+                transform.position = Vector3.Lerp(transform.position, target,
                     Time.unscaledDeltaTime * smoothSpeed);
                 if (_cam != null)
-                    _cam.orthographicSize = Mathf.Lerp(_cam.orthographicSize, desiredZoom,
+                    _cam.orthographicSize = Mathf.Lerp(_cam.orthographicSize, _targetZoom,
                         Time.unscaledDeltaTime * smoothSpeed);
             }
         }
 
         /// <summary>
-        /// Project screen point onto the Z=0 plane.
+        /// Project screen point onto the ground plane (Y=0).
         /// </summary>
         public bool ScreenToGroundPoint(Vector3 screenPos, out Vector3 worldPos)
         {
             if (_cam == null) { worldPos = Vector3.zero; return false; }
 
             Ray ray = _cam.ScreenPointToRay(screenPos);
-            Plane frontPlane = new Plane(Vector3.forward, Vector3.zero);
-
-            if (frontPlane.Raycast(ray, out float distance))
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            if (ground.Raycast(ray, out float dist))
             {
-                worldPos = ray.GetPoint(distance);
+                worldPos = ray.GetPoint(dist);
                 return true;
             }
             worldPos = Vector3.zero;

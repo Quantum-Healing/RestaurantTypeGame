@@ -81,79 +81,51 @@ namespace KitchenEmpire
 
         private void BuildWalls()
         {
-            // Camera looks along +Z (Euler 35, 0, 0). Back walls are at the
-            // far-Z edges: y = GridHeight-1 and x = GridWidth-1.
+            float wallH = 1f;
+            float wallT = 0.15f;
 
-            // Back wall along y = GridHeight-1 (runs in +X world direction)
+            // Back wall (far edge, z = GridHeight)
             for (int x = 0; x < GridWidth; x++)
             {
-                Vector3 pos = GridToWorld(x, GridHeight - 1) + new Vector3(0, 0.3f, 0.25f);
-                GameObject wall = CreateWallSegment(pos, true);
-                _walls.Add(wall);
+                var w = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                w.transform.parent = transform;
+                w.transform.position = new Vector3(x + 0.5f, wallH * 0.5f, GridHeight + wallT * 0.5f);
+                w.transform.localScale = new Vector3(1f, wallH, wallT);
+                w.name = "Wall";
+                ApplyWallMaterial(w);
+                _walls.Add(w);
             }
 
-            // Back wall along x = GridWidth-1 (runs in -X world direction as y increases)
-            for (int y = 0; y < GridHeight; y++)
+            // Right wall (far edge, x = GridWidth)
+            for (int z = 0; z < GridHeight; z++)
             {
-                Vector3 pos = GridToWorld(GridWidth - 1, y) + new Vector3(0.25f, 0.3f, 0);
-                GameObject wall = CreateWallSegment(pos, false);
-                _walls.Add(wall);
+                var w = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                w.transform.parent = transform;
+                w.transform.position = new Vector3(GridWidth + wallT * 0.5f, wallH * 0.5f, z + 0.5f);
+                w.transform.localScale = new Vector3(wallT, wallH, 1f);
+                w.name = "Wall";
+                ApplyWallMaterial(w);
+                _walls.Add(w);
             }
+        }
+
+        private void ApplyWallMaterial(GameObject wall)
+        {
+            if (wallMaterial != null)
+                wall.GetComponent<Renderer>().material = wallMaterial;
+            else
+                wall.GetComponent<Renderer>().material.color = new Color(0.72f, 0.67f, 0.56f);
         }
 
         private GameObject CreateIsometricTile(Vector3 position)
         {
-            // Create a flat diamond-shaped quad for the floor
-            GameObject tile = new GameObject("FloorTile");
+            // Simple flat square tile, 1x1 in XZ plane
+            var tile = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            tile.name = "FloorTile";
             tile.transform.position = position;
-
-            MeshFilter mf = tile.AddComponent<MeshFilter>();
-            MeshRenderer mr = tile.AddComponent<MeshRenderer>();
-
-            // Diamond mesh for isometric tile
-            Mesh mesh = new Mesh();
-            float hw = 0.5f;
-            float hh = 0.25f;
-
-            mesh.vertices = new Vector3[]
-            {
-                new Vector3(0, 0, hh),      // top
-                new Vector3(hw, 0, 0),       // right
-                new Vector3(0, 0, -hh),      // bottom
-                new Vector3(-hw, 0, 0)       // left
-            };
-            mesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
-            mesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
-            mesh.uv = new Vector2[] {
-                new Vector2(0.5f, 1), new Vector2(1, 0.5f),
-                new Vector2(0.5f, 0), new Vector2(0, 0.5f)
-            };
-
-            mf.mesh = mesh;
-
-            // Add collider for raycasting
-            MeshCollider mc = tile.AddComponent<MeshCollider>();
-            mc.sharedMesh = mesh;
-
+            tile.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            tile.transform.localScale = new Vector3(1f, 1f, 1f);
             return tile;
-        }
-
-        private GameObject CreateWallSegment(Vector3 position, bool isBackLeft)
-        {
-            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wall.transform.parent = transform;
-            wall.transform.position = position;
-            wall.transform.localScale = isBackLeft
-                ? new Vector3(0.5f, 0.6f, 0.05f)
-                : new Vector3(0.05f, 0.6f, 0.5f);
-            wall.name = "Wall";
-
-            if (wallMaterial != null)
-            {
-                wall.GetComponent<Renderer>().material = wallMaterial;
-            }
-
-            return wall;
         }
 
         private void ClearGrid()
@@ -174,16 +146,12 @@ namespace KitchenEmpire
         // ===== COORDINATE CONVERSION =====
 
         /// <summary>
-        /// Convert grid coordinates to world position (isometric).
-        /// Uses a standard isometric projection where:
-        /// - X-axis goes to the bottom-right
-        /// - Y-axis goes to the bottom-left
+        /// Convert grid coordinates to world position. Grid cell (gx, gy)
+        /// maps to world (gx + 0.5, 0, gy + 0.5) so tiles are centered on integers.
         /// </summary>
         public Vector3 GridToWorld(int gx, int gy)
         {
-            float worldX = (gx - gy) * 0.5f;
-            float worldZ = (gx + gy) * 0.25f;
-            return new Vector3(worldX, 0f, worldZ);
+            return new Vector3(gx + 0.5f, 0f, gy + 0.5f);
         }
 
         public Vector3 GridToWorld(Vector2Int gridPos)
@@ -196,9 +164,9 @@ namespace KitchenEmpire
         /// </summary>
         public Vector2Int WorldToGrid(Vector3 worldPos)
         {
-            float gx = worldPos.x + worldPos.z * 2f;
-            float gy = worldPos.z * 2f - worldPos.x;
-            return new Vector2Int(Mathf.RoundToInt(gx), Mathf.RoundToInt(gy));
+            return new Vector2Int(
+                Mathf.FloorToInt(worldPos.x),
+                Mathf.FloorToInt(worldPos.z));
         }
 
         public bool IsValidGridPos(Vector2Int pos)

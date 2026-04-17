@@ -37,17 +37,17 @@ namespace KitchenEmpire
             var camObj = new GameObject("IsometricCamera");
             var cam = camObj.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 5f;
+            cam.orthographicSize = 6f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.18f, 0.20f, 0.25f);
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 200f;
 
             var isoCamera = camObj.AddComponent<IsometricCamera>();
-            // 2.5D: camera sits at Z=50 facing -Z (Euler 0,180,0). IsometricCamera locks Z.
+            // Top-down orthographic: straight down, IsometricCamera manages final position
             camObj.transform.SetPositionAndRotation(
-                new Vector3(0f, 0f, 50f),
-                Quaternion.Euler(0f, 180f, 0f));
+                new Vector3(0f, 30f, 0f),
+                Quaternion.Euler(90f, 0f, 0f));
             camObj.AddComponent<AudioListener>();
 
             // Destroy default camera BEFORE tagging ours as MainCamera.
