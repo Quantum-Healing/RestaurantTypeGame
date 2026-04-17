@@ -44,10 +44,10 @@ namespace KitchenEmpire
             cam.farClipPlane = 200f;
 
             var isoCamera = camObj.AddComponent<IsometricCamera>();
-            // Top-down orthographic: straight down, IsometricCamera manages final position
+            // Stardew Valley-style: pitched 55° down, looking along +Z. No yaw slant.
             camObj.transform.SetPositionAndRotation(
-                new Vector3(0f, 30f, 0f),
-                Quaternion.Euler(90f, 0f, 0f));
+                new Vector3(0f, 12f, -10f),
+                Quaternion.Euler(55f, 0f, 0f));
             camObj.AddComponent<AudioListener>();
 
             // Destroy default camera BEFORE tagging ours as MainCamera.

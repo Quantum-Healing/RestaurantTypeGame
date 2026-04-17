@@ -3,19 +3,24 @@ using UnityEngine;
 namespace KitchenEmpire
 {
     /// <summary>
-    /// Top-down orthographic camera. Pans on XZ, scroll wheel zooms.
+    /// Angled overhead camera (Stardew Valley style).
+    /// Pitches down ~55 degrees looking along +Z. No yaw — grid stays straight.
+    /// Pan with WASD, zoom with scroll wheel.
     /// </summary>
     public class IsometricCamera : MonoBehaviour
     {
         [Header("Settings")]
-        public float panSpeed = 10f;
-        public float zoomSpeed = 2f;
-        public float minZoom = 2f;
-        public float maxZoom = 20f;
-        public float smoothSpeed = 8f;
-        public float cameraHeight = 30f;
+        public float panSpeed = 8f;
+        public float zoomSpeed = 10f;
+        public float minZoom = 3f;
+        public float maxZoom = 18f;
+        public float smoothSpeed = 10f;
 
-        private Vector2 _targetXZ;   // camera look-at point in XZ
+        [Header("Angle")]
+        public float pitchAngle = 55f;
+        public float viewDistance = 14f;
+
+        private Vector3 _lookTarget;
         private float _targetZoom;
         private Camera _cam;
 
@@ -24,44 +29,38 @@ namespace KitchenEmpire
             _cam = GetComponent<Camera>();
             if (_cam == null) _cam = Camera.main;
             _targetZoom = _cam != null ? _cam.orthographicSize : 6f;
-            _targetXZ = new Vector2(transform.position.x, transform.position.z);
         }
 
         void Start()
         {
-            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            ApplyPosition(true);
+            ApplyTransform(true);
         }
 
         public void CenterOnGrid(GridManager grid)
         {
-            float cx = grid.GridWidth  * 0.5f;
-            float cz = grid.GridHeight * 0.5f;
-            _targetXZ = new Vector2(cx, cz);
-            // Fit the grid in view: use the larger dimension as the zoom base
-            _targetZoom = Mathf.Max(grid.GridWidth, grid.GridHeight) * 0.6f;
-            _targetZoom = Mathf.Clamp(_targetZoom, minZoom, maxZoom);
-            ApplyPosition(true);
+            _lookTarget = new Vector3(grid.GridWidth * 0.5f, 0f, grid.GridHeight * 0.5f);
+            float fitZoom = Mathf.Max(grid.GridWidth, grid.GridHeight) * 0.55f;
+            _targetZoom = Mathf.Clamp(fitZoom, minZoom, maxZoom);
+            ApplyTransform(true);
         }
 
         void Update()
         {
             HandlePanning();
             HandleZoom();
-            ApplyPosition(false);
+            ApplyTransform(false);
         }
 
         private void HandlePanning()
         {
-            Vector2 input = Vector2.zero;
+            Vector3 move = Vector3.zero;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    move.z += 1f;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  move.z -= 1f;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  move.x -= 1f;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) move.x += 1f;
 
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    input.y += 1;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  input.y -= 1;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  input.x -= 1;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) input.x += 1;
-
-            if (input.sqrMagnitude > 0.01f)
-                _targetXZ += input.normalized * panSpeed * Time.unscaledDeltaTime;
+            if (move.sqrMagnitude > 0.01f)
+                _lookTarget += move.normalized * panSpeed * Time.unscaledDeltaTime;
         }
 
         private void HandleZoom()
@@ -74,32 +73,23 @@ namespace KitchenEmpire
             }
         }
 
-        private void ApplyPosition(bool instant)
+        private void ApplyTransform(bool instant)
         {
-            Vector3 target = new Vector3(_targetXZ.x, cameraHeight, _targetXZ.y);
+            float rad = pitchAngle * Mathf.Deg2Rad;
+            Vector3 offset = new Vector3(0f, Mathf.Sin(rad), -Mathf.Cos(rad)) * viewDistance;
+            Vector3 desiredPos = _lookTarget + offset;
+            Quaternion desiredRot = Quaternion.Euler(pitchAngle, 0f, 0f);
+            float t = Time.unscaledDeltaTime * smoothSpeed;
 
-            if (instant)
-            {
-                transform.position = target;
-                if (_cam != null) _cam.orthographicSize = _targetZoom;
-            }
-            else
-            {
-                transform.position = Vector3.Lerp(transform.position, target,
-                    Time.unscaledDeltaTime * smoothSpeed);
-                if (_cam != null)
-                    _cam.orthographicSize = Mathf.Lerp(_cam.orthographicSize, _targetZoom,
-                        Time.unscaledDeltaTime * smoothSpeed);
-            }
+            transform.position = instant ? desiredPos : Vector3.Lerp(transform.position, desiredPos, t);
+            transform.rotation = instant ? desiredRot : Quaternion.Slerp(transform.rotation, desiredRot, t);
+            if (_cam != null)
+                _cam.orthographicSize = instant ? _targetZoom : Mathf.Lerp(_cam.orthographicSize, _targetZoom, t);
         }
 
-        /// <summary>
-        /// Project screen point onto the ground plane (Y=0).
-        /// </summary>
         public bool ScreenToGroundPoint(Vector3 screenPos, out Vector3 worldPos)
         {
             if (_cam == null) { worldPos = Vector3.zero; return false; }
-
             Ray ray = _cam.ScreenPointToRay(screenPos);
             var ground = new Plane(Vector3.up, Vector3.zero);
             if (ground.Raycast(ray, out float dist))

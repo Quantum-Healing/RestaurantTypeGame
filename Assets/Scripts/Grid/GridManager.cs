@@ -81,8 +81,8 @@ namespace KitchenEmpire
 
         private void BuildWalls()
         {
-            float wallH = 1f;
-            float wallT = 0.15f;
+            float wallH = 2f;
+            float wallT = 0.2f;
 
             // Back wall (far edge, z = GridHeight)
             for (int x = 0; x < GridWidth; x++)
